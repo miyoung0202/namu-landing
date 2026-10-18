@@ -16,7 +16,12 @@ const mime = {
 };
 
 http.createServer((req, res) => {
-  let filePath = path.join(ROOT, req.url === '/' ? 'index.html' : req.url);
+  // Ignore query strings (?utm_source=...) and keep requests inside ROOT
+  let urlPath;
+  try { urlPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname); }
+  catch { res.writeHead(400); res.end('Bad request'); return; }
+  const filePath = path.join(ROOT, urlPath === '/' ? 'index.html' : urlPath);
+  if (!filePath.startsWith(ROOT + path.sep)) { res.writeHead(404); res.end('Not found'); return; }
   const ext = path.extname(filePath);
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
